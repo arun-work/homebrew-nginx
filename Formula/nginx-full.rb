@@ -159,9 +159,9 @@ class NginxFull < Formula
     if build.with?("tcp-proxy-module")
       patches[:p1] = "https://raw.githubusercontent.com/yaoweibin/nginx_tcp_proxy_module/afcab76/tcp_1_8.patch"
     end
-    if build.with?("hpack")
-      patches[:p1] = "https://raw.githubusercontent.com/hakasenyang/openssl-patch/master/nginx_hpack_push.patch"
-    end
+    # if build.with?("hpack")
+    #   patches[:p1] = "https://raw.githubusercontent.com/hakasenyang/openssl-patch/master/nginx_hpack_push.patch"
+    # end
     patches
   end
 
@@ -237,8 +237,14 @@ class NginxFull < Formula
 
     args = %W[
       --prefix=#{prefix}
+      --with-http2
       --with-http_ssl_module
       --with-ipv6
+      --with-pcre
+      --with-gzip-static
+      --with-brotli-module
+      --with-threads
+      --with-headers-more-module
       --sbin-path=#{bin}/nginx
       --with-cc-opt=#{cc_opt}
       --with-ld-opt=#{ld_opt}
