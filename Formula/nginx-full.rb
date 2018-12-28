@@ -237,7 +237,7 @@ class NginxFull < Formula
 
     args = %W[
       --prefix=#{prefix}
-      --with-http2
+      http2
       --with-http_ssl_module
       --with-ipv6
       --with-pcre
