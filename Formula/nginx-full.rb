@@ -1,3 +1,26 @@
+class HelperLocal
+  mattr_accessor :build
+
+  def self.default_args 
+    [
+      "--with-http2",
+      "--with-http-ssl",
+      "--with-ipv6",
+      "--with-pcre",
+      "--with-gzip-static",
+      "--with-threads",
+      "--with-brotli-module",
+      "--with-headers-more-module",
+      "--with-hpack"
+    ]
+  end
+
+  def self.building(value)
+    default_args_string = self.default_args.join(" ")
+    return build.with?(value) || default_args_string.include?(value)
+  end
+end
+
 class NginxFull < Formula
   desc "HTTP(S) server, reverse proxy, IMAP/POP3 proxy server"
   homepage "https://nginx.org/"
@@ -8,7 +31,7 @@ class NginxFull < Formula
   head "http://hg.nginx.org/nginx/", :using => :hg
 
   conflicts_with "nginx", :because => "nginx-full symlink with the name for compatibility with nginx"
-
+  
   def self.core_modules
     [
       ["addition",           "http_addition_module",      "Build with HTTP Addition support"],
@@ -42,6 +65,7 @@ class NginxFull < Formula
       ["sub",                "http_sub_module",           "Build with HTTP Sub support"],
       ["webdav",             "http_dav_module",           "Build with WebDAV support"],
       ["xslt",               "http_xslt_module",          "Build with XSLT support"],
+      ["http-ssl",           "http_ssl_module",           "Build with SSL support"],
       ["hpack",              "http_v2_hpack_enc",         "Build with full HPACK header compression support"],
     ]
   end
@@ -111,57 +135,53 @@ class NginxFull < Formula
 
   option "with-homebrew-libressl", "Include LibreSSL instead of OpenSSL via Homebrew"
 
+  HelperLocal.build = build
+
   depends_on "pcre"
   depends_on "passenger" => :optional
   depends_on "geoip" => :optional
-  if build.with?("homebrew-libressl")
+  if HelperLocal.building("homebrew-libressl")
     depends_on "libressl"
   else
     depends_on "openssl"
   end
-  depends_on "libzip" if build.with?("unzip")
-  depends_on "hpack" if build.with?("http2")
-  depends_on "libxml2" if build.with?("xslt")
-  depends_on "libxslt" if build.with?("xslt")
-  depends_on "gd" if build.with?("image-filter")
-  depends_on "valgrind" if build.with?("no-pool-nginx")
-  depends_on "icu4c" if build.with?("xsltproc-module")
-  depends_on "libxml2" if build.with?("xsltproc-module")
-  depends_on "libxslt" if build.with?("xsltproc-module")
+  depends_on "libzip" if HelperLocal.building("unzip")
+  depends_on "libxml2" if HelperLocal.building("xslt")
+  depends_on "libxslt" if HelperLocal.building("xslt")
+  depends_on "gd" if HelperLocal.building("image-filter")
+  depends_on "valgrind" if HelperLocal.building("no-pool-nginx")
+  depends_on "icu4c" if HelperLocal.building("xsltproc-module")
+  depends_on "libxml2" if HelperLocal.building("xsltproc-module")
+  depends_on "libxslt" if HelperLocal.building("xsltproc-module")
   depends_on "gperftools" => :optional
   depends_on "gd" => :optional
   depends_on "imlib2" => :optional
-
-  # HTTP2 (backward compatibility for spdy)
-  if build.with?("spdy")
-    deprecated_option "with-spdy" => "with-http2"
-  end
 
   core_modules.each do |arr|
     option "with-#{arr[0]}", arr[2]
   end
   third_party_modules.each do |name, desc|
     option "with-#{name}-module", desc
-    depends_on "#{name}-nginx-module" if build.with?("#{name}-module")
+    depends_on "#{name}-nginx-module" if HelperLocal.building("#{name}-module")
   end
 
   def patches
     patches = {}
-    if build.with?("no-pool-nginx")
+    if HelperLocal.building("no-pool-nginx")
       patches[:p2] = "https://raw.githubusercontent.com/openresty/no-pool-nginx/master/nginx-1.11.2-no_pool.patch"
     end
-    if build.with?("extended-status-module")
+    if HelperLocal.building("extended-status-module")
       patches[:p1] = "https://raw.githubusercontent.com/nginx-modules/ngx_http_extended_status_module/master/extended_status-1.10.1.patch"
     end
-    if build.with?("ustats-module")
+    if HelperLocal.building("ustats-module")
       patches[:p1] = "https://raw.githubusercontent.com/nginx-modules/ngx_ustats_module/master/nginx-1.6.1.patch"
     end
-    if build.with?("tcp-proxy-module")
+    if HelperLocal.building("tcp-proxy-module")
       patches[:p1] = "https://raw.githubusercontent.com/yaoweibin/nginx_tcp_proxy_module/afcab76/tcp_1_8.patch"
     end
-    # if build.with?("hpack")
-    #   patches[:p1] = "https://raw.githubusercontent.com/hakasenyang/openssl-patch/master/nginx_hpack_push.patch"
-    # end
+    if HelperLocal.building("hpack")
+      patches[:p1] = "https://raw.githubusercontent.com/hakasenyang/openssl-patch/master/nginx_hpack_push_1.15.3.patch"
+    end
     patches
   end
 
@@ -169,16 +189,16 @@ class NginxFull < Formula
   skip_clean "logs"
 
   def install
-    if build.with?("http-flood-detector-module") && build.without?("status")
+    if HelperLocal.building("http-flood-detector-module") && !HelperLocal.building("status")
       odie "http-flood-detector-nginx-module: Stub Status module is required --with-status"
     end
 
-    if build.with?("dav-ext-module") && build.without?("webdav")
+    if HelperLocal.building("dav-ext-module") && !HelperLocal.building("webdav")
       odie "dav-ext-nginx-module: WebDav Extended module is required --with-webdav"
     end
 
     # small-light needs to run setup script
-    if build.with?("small-light-module")
+    if HelperLocal.building("small-light-module")
       small_light = Formula["small-light-nginx-module"]
       args = build.used_options.select { |option| ["with-gd", "with-imlib2"].include?(option.name) }
       origin_dir = Dir.pwd
@@ -189,7 +209,7 @@ class NginxFull < Formula
     end
 
     # mruby module needs to prepare compiling mruby
-    if build.with?("mruby-module")
+    if HelperLocal.building("mruby-module")
       ENV["NGX_MRUBY_LDFLAGS"] = "-lcrypto"
       mruby = Formula["mruby-nginx-module"]
       origin_dir = Dir.pwd
@@ -219,7 +239,7 @@ class NginxFull < Formula
     cc_opt = "-I#{HOMEBREW_PREFIX}/include -I#{pcre.include}"
     ld_opt = "-L#{HOMEBREW_PREFIX}/lib -L#{pcre.lib}"
 
-    if build.with?("libressl")
+    if HelperLocal.building("libressl")
       cc_opt += " -I#{Formula["libressl"].include}"
       ld_opt += " -L#{Formula["libressl"].lib}"
     else
@@ -227,24 +247,16 @@ class NginxFull < Formula
       ld_opt += " -L#{Formula["openssl"].lib}"
     end
 
-    if build.with?("xsltproc-module")
+    if HelperLocal.building("xsltproc-module")
       icu = Formula["icu4c"]
       cc_opt += " -I#{icu.opt_include}"
       ld_opt += " -L#{icu.opt_lib}"
     end
 
-    cc_opt += " -I#{Formula["libzip"].opt_lib}/libzip/include" if build.with?("unzip")
+    cc_opt += " -I#{Formula["libzip"].opt_lib}/libzip/include" if HelperLocal.building("unzip")
 
     args = %W[
       --prefix=#{prefix}
-      http2
-      --with-http_ssl_module
-      --with-ipv6
-      --with-pcre
-      --with-gzip-static
-      --with-brotli-module
-      --with-threads
-      --with-headers-more-module
       --sbin-path=#{bin}/nginx
       --with-cc-opt=#{cc_opt}
       --with-ld-opt=#{ld_opt}
@@ -262,29 +274,29 @@ class NginxFull < Formula
 
     # Core Modules
     self.class.core_modules.each do |arr|
-      args << "--with-#{arr[1]}" if build.with?(arr[0]) && arr[1]
+      args << "--with-#{arr[1]}" if HelperLocal.building(arr[0]) && arr[1]
     end
 
     # Set misc module and mruby module both depend on nginx-devel-kit being compiled in
-    if build.with?("set-misc-module") || build.with?("mruby-module") || build.with?("lua-module") || build.with?("array-var-module")
+    if HelperLocal.building("set-misc-module") || HelperLocal.building("mruby-module") || HelperLocal.building("lua-module") || HelperLocal.building("array-var-module")
       args << "--add-module=#{HOMEBREW_PREFIX}/share/ngx-devel-kit"
     end
 
     # Third Party Modules
     self.class.third_party_modules.each_key do |name|
-      if build.with?("#{name}-module")
+      if HelperLocal.building("#{name}-module")
         args << "--add-module=#{HOMEBREW_PREFIX}/share/#{name}-nginx-module"
       end
     end
 
     # Passenger
-    if build.with?("passenger")
+    if HelperLocal.building("passenger")
       nginx_ext = `#{Formula["passenger"].opt_bin}/passenger-config --nginx-addon-dir`.chomp
       args << "--add-module=#{nginx_ext}"
     end
 
     # Install LuaJit
-    if build.with?("lua-module")
+    if HelperLocal.building("lua-module")
       luajit_path = `brew --prefix luajit`.chomp
       ENV["LUAJIT_LIB"] = "#{luajit_path}/lib"
       ENV["LUAJIT_INC"] = "#{luajit_path}/include/luajit-2.0"
@@ -362,7 +374,7 @@ class NginxFull < Formula
       Waiting on exit process
        $ nginx -s quit
     EOS
-    s << "\n" << passenger_caveats if build.with?("passenger")
+    s << "\n" << passenger_caveats if HelperLocal.building("passenger")
     s
   end
 
