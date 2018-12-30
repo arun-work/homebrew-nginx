@@ -4,7 +4,7 @@ This tap is designed specifically for a custom build of NGINX with more module o
 
 ## How do I install these formule (NGINX Modules)?
 Once the tap is installed, you can install `nginx-full`
-with optional [additional modules](https://denji.github.io/homebrew-nginx/#modules):
+with optional additional modules:
 
     brew tap arun-work/nginx
     brew install nginx-full --with-upload-module
