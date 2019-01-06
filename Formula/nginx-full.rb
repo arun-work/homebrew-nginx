@@ -11,7 +11,8 @@ class HelperLocal
       "--with-threads",
       "--with-brotli-module",
       "--with-headers-more-module",
-      "--with-hpack"
+      "--with-charset",
+      "--with-hpack",
     ]
   end
 
@@ -66,6 +67,7 @@ class NginxFull < Formula
       ["webdav",             "http_dav_module",           "Build with WebDAV support"],
       ["xslt",               "http_xslt_module",          "Build with XSLT support"],
       ["http-ssl",           "http_ssl_module",           "Build with SSL support"],
+      ["charset",            "http_charset_module",       "Build with charset module"],
       ["hpack",              "http_v2_hpack_enc",         "Build with full HPACK header compression support"],
     ]
   end
