@@ -12,6 +12,17 @@ class HelperLocal
       "--with-brotli-module",
       "--with-headers-more-module",
       "--with-hpack",
+      # "--with-compat",
+      # "--with-status",
+      # "--with-degredation",
+      # "--with-dosdetector-module",
+      # "--with-gunzip",
+      # "--with-healthcheck-module",
+      # "--with-http-flood-detector-module",
+      # "--with-push-stream-module",
+      # "--with-slice",
+      # "--with-tcp-proxy-module",
+      # "--with-ustats-module"
     ]
   end
 
