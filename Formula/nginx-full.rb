@@ -190,9 +190,9 @@ class NginxFull < Formula
     if HelperLocal.building("tcp-proxy-module")
       patches[:p1] = "https://raw.githubusercontent.com/yaoweibin/nginx_tcp_proxy_module/afcab76/tcp_1_8.patch"
     end
-    if HelperLocal.building("hpack")
-      patches[:p1] = "https://raw.githubusercontent.com/hakasenyang/openssl-patch/master/nginx_hpack_push_1.15.3.patch"
-    end
+    # if HelperLocal.building("hpack")
+      # patches[:p1] = "https://raw.githubusercontent.com/hakasenyang/openssl-patch/master/nginx_hpack_push_1.15.3.patch"
+    # end
     patches
   end
 
